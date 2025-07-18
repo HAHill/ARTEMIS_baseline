@@ -1,0 +1,83 @@
+---
+title: "Shiny App For Nomogram"
+output: html_notebook
+---
+
+```{r}
+library(shiny)
+library(tidyverse)
+```
+
+```{r}
+library(shiny)
+
+# Helper function to round to nearest in a defined set
+round_to_nearest <- function(x, allowed) {
+  allowed[which.min(abs(allowed - x))]
+}
+
+# UI
+ui <- fluidPage(
+  titlePanel("AC Sensitivity Nomogram Score Calculator"),
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("gep", "GEP Score", value = 0, min = -10, max = 10),
+      numericInput("age", "Age at Diagnosis", value = 50, min = 18, max = 100),
+      selectInput("ki67", "Ki-67 Category", choices = c("High", "Low or Moderate")),
+      selectInput("hist", "Histology", choices = c("IDC or ILC", "Metaplastic")),
+      actionButton("calc", "Calculate Total Score")
+    ),
+    mainPanel(
+      h3("Total Nomogram Score"),
+      verbatimTextOutput("rounded_inputs"),
+      verbatimTextOutput("total_score")
+    )
+  )
+)
+
+# Server
+server <- function(input, output) {
+  observeEvent(input$calc, {
+    # Allowed values
+    gep_vals <- -5:4
+    age_vals <- seq(20, 80, by = 5)
+    
+    # Round inputs
+    gep_rounded <- round_to_nearest(input$gep, gep_vals)
+    age_rounded <- round_to_nearest(input$age, age_vals)
+    
+    # Point mappings
+    gep_points_map <- c(
+      `-5` = 0, `-4` = 11, `-3` = 22, `-2` = 33, `-1` = 44,
+      `0` = 56, `1` = 67, `2` = 78, `3` = 89, `4` = 100
+    )
+    
+    age_points_map <- c(
+      `20` = 16, `25` = 15, `30` = 13, `35` = 12, `40` = 11,
+      `45` = 9, `50` = 8, `55` = 7, `60` = 5, `65` = 4,
+      `70` = 3, `75` = 1, `80` = 0
+    )
+    
+    ki67_points <- ifelse(input$ki67 == "High", 10, 0)
+    hist_points <- ifelse(input$hist == "IDC or ILC", 10, 0)
+    
+    gep_score <- gep_points_map[as.character(gep_rounded)]
+    age_score <- age_points_map[as.character(age_rounded)]
+    
+    total <- gep_score + age_score + ki67_points + hist_points
+    
+    output$rounded_inputs <- renderText({
+      paste0("Rounded GEP Score: ", gep_rounded,
+             "\nRounded Age: ", age_rounded)
+    })
+    
+    output$total_score <- renderText({
+      paste("Total Score:", total)
+    })
+  })
+}
+
+# Run App
+shinyApp(ui = ui, server = server)
+
+```
