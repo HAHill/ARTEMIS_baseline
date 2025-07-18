@@ -1,2 +1,2 @@
 # ARTEMIS_baseline
-Code for analyses and visualizations from ARTEMIS baseline manuscript
+Code for analyses, visualizations and clinical tools from ARTEMIS baseline manuscript
