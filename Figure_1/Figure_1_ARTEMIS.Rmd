@@ -1,0 +1,221 @@
+---
+title: "Figure 1- Molecular Determinants of Response to Neoadjuvant Therapy in Triple-Negative
+  Breast Cancer"
+author: "HA Hill"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(DiagrammeR)
+library(ggpubr)
+library(ggsurvfit)
+```
+#Figure 1A - Consort Diagram
+```{r}
+g <- grViz("
+  digraph consort_diagram {
+    graph [compound=true, rankdir=TB, splines=line]
+    node [shape=box, style=filled, fillcolor=lightgrey, fontname=helvetica, fontsize=16,       width=6]
+
+    // Enrollment
+    enrolled [label='Assessed for eligibility and signed informed consent (n=695)', fillcolor=lightblue]
+    excluded [label='Did not meet inclusion criteria (n=45)', fillcolor=lightcoral]
+
+    // Procedure
+    protocol  [label='Initiated protocol procedures (n=650)', fillcolor=lightblue]
+    deviation [label='Deviated significantly from protocol (n=4)', fillcolor = lightcoral]
+    withdraw [label='Withdrew consent prior to surgery (n=97)', fillcolor = lightcoral]
+    no_us [label='Did not undergo ultrasound after completion of AC (n=16)', fillcolor=lightcoral]
+    us [label='Underwent ultrasound after completion of AC (n=533)', fillcolor=lightblue]
+    unmeasure [label='Breast tumor ill-defined and unmeasurable (n=1)', fillcolor=lightcoral]
+
+    // Analysis
+    analysis [label='Included in clinical analysis (n=549)', fillcolor=lightblue]
+    vol_analysis [label='Included in Volumetric Analysis (n=532)', fillcolor = lightblue]
+    
+    // Blank_connection_nodes
+    
+  blank1[label = '', width = 0.01, height = 0.01]
+  blank2[label = '', width = 0.01, height = 0.01]
+  blank3[label = '', width = 0.01, height = 0.01]
+  blank4[label = '', width = 0.01, height = 0.01]
+  blank5[label = '', width = 0.01, height = 0.01]
+  
+
+    // Connections
+    enrolled -> blank1[dir=none]
+    blank1 ->protocol
+    blank1 -> excluded
+    protocol -> blank2[dir=none]
+    blank2 -> blank3[dir=none]
+    blank2 -> deviation
+    blank3 -> withdraw
+    blank3 ->analysis
+    analysis -> blank4[dir=none]
+    blank4 -> no_us
+    blank4 -> us
+    us -> blank5[dir=none]
+    blank5 -> unmeasure
+    blank5 -> vol_analysis
+   
+    
+    
+  {rank=same;blank1;excluded;};
+  {rank=same;blank2;deviation;};
+  {rank=same;blank3;withdraw;};
+  {rank=same;blank4; no_us;};
+  {rank=same;blank5; unmeasure;}
+    
+  }
+")
+
+g
+```
+#Figure 1B - Waterfall Plot - showing tumor percent volumne change from baseline
+```{r}
+#Import data
+W <-read_excel("/Users/hahill/Desktop/Figure_1_code_ARTEMIS/waterfall_plot.xlsx")
+```
+
+```{r}
+#Plot data
+
+W <- W %>% arrange(desc(change))
+
+col <- (ifelse(W$`number AC`==1,
+               "#00A087",
+        ifelse(W$`number AC` == 2, 
+              "#CF3759", 
+        ifelse(W$`number AC` == 3,
+              "#FFD700","#A5D5D8"))))
+
+wf<- barplot(W$change, 
+              col=col, 
+              border=col, 
+              space=0.5, 
+              ylim=c(-100,500),
+              main = "Change in Tumor Volume (%) from Baseline", 
+              cex.axis=1.5, 
+              legend.text= c( "1","2","3","4"),
+              args.legend=list(title="Cycles of AC", fill=c("#00A087","#CF3759","#FFD700","#A5D5D8"), border=NA, cex=1.2)) + font("legend.text",size = 16) + theme(legend.position.inside= c(.5,.5)) + abline(h=-70, col = "black", lwd=0.5)
+```
+#Figure 1C - Event-free Survuval by Response to AC - please see analysis code for more information
+
+```{r}
+#Import survival data
+survival_art <-read_excel("/Users/hahill/Desktop/Figure_1_code_ARTEMIS/ARTEMIS_survival.xlsx")
+```
+
+```{r}
+p <- survfit2(Surv(time_efs, event_efs) ~ sensitive_cat, data = survival_art) |>
+  ggsurvfit(linewidth = 1) +
+  add_confidence_interval() +
+  add_quantile(y_value = 0, color = "gray50", linewidth = 0.75) 
+ 
+
+q <- p + coord_cartesian(ylim = c(0, 1.00)) +
+  labs(x= "Time (Weeks)", title = "Event-free Suvival (EFS) by Response to AC") +
+  scale_color_manual(values = c('#efac71','#4682B4')) +
+  scale_fill_manual(values = c('#efac71','#4682B4')) +
+  scale_x_continuous(limits = c(0,90), expand=(c(0,0)))+
+  scale_y_continuous(limits = c(0,1), expand=(c(0,0)))+
+  add_pvalue(location  = "annotation", x = 80, y = 0.5) 
+
+q
+```
+#Figure 2D - Flowchart of Patients and clinical outcomes
+```{r}
+g = grViz("
+      digraph G{
+      compound = true
+      rankdir = LR
+      node [fontname='helvetica', shape=box, width = 4, style = filled,  color=lightgrey]
+      edge [arrowhead = none]
+      
+      tab1 [label='@@1']
+      tab2 [label='@@2']
+      
+      subgraph cluster_one {
+      
+      node[shape=box, style = filled, fillcolor = lightsteelblue];
+      edge[arrowhead=none];
+      style = dashed;
+      fontname = 'helvetica-bold';
+      rank = LR;
+      
+      node[shape = box, style = filled, color = black];
+      tab3 [label='@@3']
+      tab7 [label='@@7']
+      tab8 [label='@@8']
+      tab9 [label='@@9']
+      tab10 [label='@@10']
+      tab11 [label='@@11']
+      tab12 [label='@@12']
+      
+      tab3-> tab7
+      tab3-> tab8
+      tab7 -> tab12
+      tab7 -> tab11
+      tab8 -> tab10
+      tab8 -> tab9
+      
+      }
+      
+      subgraph cluster_two {
+      
+      node[shape=box, style = filled, fillcolor = peachpuff];
+      edge[arrowhead=none];
+      style = dashed;
+      fontname = 'helvetica-bold';
+      rank = LR;
+      
+      node[shape = box, style = filled, color = black];
+    
+      tab4 [label='@@4']
+      tab5 [label='@@5']
+      tab6 [label='@@6']
+      tab13[label='@@13']
+      tab14[label='@@14']
+      tab15[label='@@15']
+      tab16[label='@@16']
+      
+      tab4 -> tab5
+      tab4 -> tab6
+      tab5 -> tab13
+      tab5 -> tab14
+      tab6 -> tab15
+      tab6 -> tab16
+      
+      }
+      
+      {rank=min tab1->tab2}
+      tab1 -> tab3
+      tab1 -> tab4
+      }
+      
+      [1]:'All Patients (n=549)'
+      [2]:'No Sensitivity Data (n=17)'
+      [3]:'Sensitive to AC (n=352)'
+      [4]:'Resistant to AC (n=180)'
+      [5]:'Standard of Care (n=76)'
+      [6]:'Experiemental Treatment (n=103)'
+      [7]:'Standard of Care (n=338)'
+      [8]:'Experimental Treatment (n=8)'
+      [9]:'pCR (n=4)'
+      [10]:'Residual Disease (n=4)'
+      [11]:'pCR (n=187)'
+      [12]:'Residual Disease (n=151)'
+      [13]:'pCR (n=12)'
+      [14]:'Residual Disease (n=64)'
+      [15]:'pCR (n=14)'
+      [16]:'Residual Disease (n=89)'
+")
+
+g
+```
+
+
