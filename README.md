@@ -1,2 +1,3 @@
-# ARTEMIS_baseline
-Code for analyses, visualizations and clinical tools from ARTEMIS baseline manuscript
+#Molecular Determinants of Response to Neoadjuvant Therapy in Triple-Negative Breast Cancer by Hill, Yam et. al.
+Code for reproducibility of figures, analysis and clinical decision nomogram
+
